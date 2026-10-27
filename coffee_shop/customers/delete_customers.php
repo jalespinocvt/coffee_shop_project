@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../auth.php';
+require_once __DIR__ . '/../config/database.php';
 
 include("../config/database.php");
 
@@ -6,18 +8,17 @@ $message = "";
 
 if(isset($_POST['delete']))
 {
-    $id = $_POST['order_id'];
+    $id = $_POST['customer_id'];
 
-    $sql = "DELETE FROM orders
-            WHERE order_id='$id'";
+    $sql = "DELETE FROM customers WHERE customer_id='$id'";
 
     if(mysqli_query($conn, $sql))
     {
-        $message = "Order Deleted Successfully!";
+        $message = "Customer Deleted Successfully!";
     }
     else
     {
-        $message = "Error Deleting Order!";
+        $message = "Error deleting customer.";
     }
 }
 
@@ -27,22 +28,22 @@ if(isset($_POST['delete']))
 <html>
 <head>
     <link rel="stylesheet" href="../style.css">
-    <title>Delete Order</title>
+    <title>Delete Customer</title>
 </head>
 <body>
 
-<h2>Delete Order</h2>
+<h2>Delete Customer</h2>
 
 <form method="POST">
 
-    Order ID:
+    <label>Customer ID:</label>
     <br>
-    <input type="number" name="order_id" required>
+    <input type="number" name="customer_id" required>
 
     <br><br>
 
     <button type="submit" name="delete">
-        Delete Order
+        Delete Customer
     </button>
 
 </form>
