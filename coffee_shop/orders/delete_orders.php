@@ -26,6 +26,7 @@ if(isset($_POST['delete']))
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="../style.css">
     <title>Delete Order</title>
 </head>
 <body>
