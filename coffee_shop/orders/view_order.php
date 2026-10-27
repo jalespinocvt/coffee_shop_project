@@ -12,6 +12,7 @@ $result = mysqli_query(
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="../style.css">
     <title>View Orders</title>
 </head>
 <body>
