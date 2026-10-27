@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../auth.php';
+require_once __DIR__ . '/../config/database.php';
+
 
 include("../config/database.php");
 
@@ -22,6 +25,7 @@ if(isset($_POST['save']))
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="../style.css">
     <title>Add Customer</title>
 </head>
 <body>
