@@ -2,21 +2,25 @@
 
 include("../config/database.php");
 
+$message = "";
+
 if(isset($_POST['update']))
 {
-    $id = $_POST['customer_id'];
-    $name = $_POST['customer_name'];
-    $contact = $_POST['contact_number'];
+    $id = $_POST['order_id'];
+    $product = $_POST['product_name'];
 
-    mysqli_query(
-        $conn,
-        "UPDATE customers
-         SET customer_name='$name',
-             contact_number='$contact'
-         WHERE customer_id=$id"
-    );
+    $sql = "UPDATE orders
+            SET product_name='$product'
+            WHERE order_id='$id'";
 
-    echo "Customer Updated Successfully!";
+    if(mysqli_query($conn, $sql))
+    {
+        $message = "Order Updated Successfully!";
+    }
+    else
+    {
+        $message = "Error Updating Order!";
+    }
 }
 
 ?>
@@ -24,44 +28,36 @@ if(isset($_POST['update']))
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Update Customer</title>
+    <link rel="stylesheet" href="../style.css">
+    <title>Edit Order</title>
 </head>
 <body>
 
-<h2>Update Customer</h2>
+<h2>Update Order</h2>
 
 <form method="POST">
 
-    Customer ID:
+    Order ID:
     <br>
-    <input type="number"
-           name="customer_id"
-           required>
+    <input type="number" name="order_id" required>
 
     <br><br>
 
-    New Name:
+    New Product Name:
     <br>
-    <input type="text"
-           name="customer_name"
-           required>
+    <input type="text" name="product_name" required>
 
     <br><br>
 
-    New Contact:
-    <br>
-    <input type="text"
-           name="contact_number"
-           required>
-
-    <br><br>
-
-    <button type="submit"
-            name="update">
-        Update
+    <button type="submit" name="update">
+        Update Order
     </button>
 
 </form>
+
+<br>
+
+<?php echo $message; ?>
 
 </body>
 </html>
