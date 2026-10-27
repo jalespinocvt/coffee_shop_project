@@ -30,6 +30,7 @@ if(isset($_POST['save']))
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="../style.css">
     <title>Add Order</title>
 </head>
 <body>
