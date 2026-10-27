@@ -1,26 +1,24 @@
 <?php
+require_once __DIR__ . '/../auth.php';
+require_once __DIR__ . '/../config/database.php';
 
 include("../config/database.php");
 
-$message = "";
-
 if(isset($_POST['update']))
 {
-    $id = $_POST['order_id'];
-    $product = $_POST['product_name'];
+    $id = $_POST['customer_id'];
+    $name = $_POST['customer_name'];
+    $contact = $_POST['contact_number'];
 
-    $sql = "UPDATE orders
-            SET product_name='$product'
-            WHERE order_id='$id'";
+    mysqli_query(
+        $conn,
+        "UPDATE customers
+         SET customer_name='$name',
+             contact_number='$contact'
+         WHERE customer_id=$id"
+    );
 
-    if(mysqli_query($conn, $sql))
-    {
-        $message = "Order Updated Successfully!";
-    }
-    else
-    {
-        $message = "Error Updating Order!";
-    }
+    echo "Customer Updated Successfully!";
 }
 
 ?>
@@ -29,35 +27,44 @@ if(isset($_POST['update']))
 <html>
 <head>
     <link rel="stylesheet" href="../style.css">
-    <title>Edit Order</title>
+    <title>Update Customer</title>
 </head>
 <body>
 
-<h2>Update Order</h2>
+<h2>Update Customer</h2>
 
 <form method="POST">
 
-    Order ID:
+    Customer ID:
     <br>
-    <input type="number" name="order_id" required>
+    <input type="number"
+           name="customer_id"
+           required>
 
     <br><br>
 
-    New Product Name:
+    New Name:
     <br>
-    <input type="text" name="product_name" required>
+    <input type="text"
+           name="customer_name"
+           required>
 
     <br><br>
 
-    <button type="submit" name="update">
-        Update Order
+    New Contact:
+    <br>
+    <input type="text"
+           name="contact_number"
+           required>
+
+    <br><br>
+
+    <button type="submit"
+            name="update">
+        Update
     </button>
 
 </form>
-
-<br>
-
-<?php echo $message; ?>
 
 </body>
 </html>
