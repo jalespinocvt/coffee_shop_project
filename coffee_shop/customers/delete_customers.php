@@ -6,17 +6,18 @@ $message = "";
 
 if(isset($_POST['delete']))
 {
-    $id = $_POST['customer_id'];
+    $id = $_POST['order_id'];
 
-    $sql = "DELETE FROM customers WHERE customer_id='$id'";
+    $sql = "DELETE FROM orders
+            WHERE order_id='$id'";
 
     if(mysqli_query($conn, $sql))
     {
-        $message = "Customer Deleted Successfully!";
+        $message = "Order Deleted Successfully!";
     }
     else
     {
-        $message = "Error deleting customer.";
+        $message = "Error Deleting Order!";
     }
 }
 
@@ -25,22 +26,23 @@ if(isset($_POST['delete']))
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Delete Customer</title>
+    <link rel="stylesheet" href="../style.css">
+    <title>Delete Order</title>
 </head>
 <body>
 
-<h2>Delete Customer</h2>
+<h2>Delete Order</h2>
 
 <form method="POST">
 
-    <label>Customer ID:</label>
+    Order ID:
     <br>
-    <input type="number" name="customer_id" required>
+    <input type="number" name="order_id" required>
 
     <br><br>
 
     <button type="submit" name="delete">
-        Delete Customer
+        Delete Order
     </button>
 
 </form>
