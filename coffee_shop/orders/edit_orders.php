@@ -28,6 +28,7 @@ if(isset($_POST['update']))
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="../style.css">
     <title>Edit Order</title>
 </head>
 <body>
