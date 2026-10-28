@@ -1,142 +1,87 @@
-
 <?php
-session_start();
-require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/../auth.php';
+redirect_if_logged_in();
 
-$error = '';
-$success = '';
+$errors = [];
+$data = ['first_name' => '', 'last_name' => '', 'email' => ''];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $firstName = trim($_POST['first_name'] ?? '');
-    $lastName = trim($_POST['last_name'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $confirmPassword = $_POST['confirm_password'] ?? '';
+    $data['first_name'] = trim($_POST['first_name'] ?? '');
+    $data['last_name']  = trim($_POST['last_name'] ?? '');
+    $data['email']      = trim($_POST['email'] ?? '');
+    $password           = $_POST['password'] ?? '';
+    $confirm            = $_POST['confirm_password'] ?? '';
 
-    if ($firstName === '' || $lastName === '' || $email === '' || $password === '') {
-        $error = 'Please complete all fields.';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = 'Please enter a valid email address.';
-    } elseif (strlen($password) < 8) {
-        $error = 'Password must be at least 8 characters.';
-    } elseif ($password !== $confirmPassword) {
-        $error = 'Passwords do not match.';
-    } else {
-        $check = mysqli_prepare(
-            $conn,
-            'SELECT user_id FROM users WHERE email = ?'
-        );
-        mysqli_stmt_bind_param($check, 's', $email);
-        mysqli_stmt_execute($check);
-        mysqli_stmt_store_result($check);
+    if ($data['first_name'] === '') $errors[] = 'First name is required.';
+    if ($data['last_name'] === '')  $errors[] = 'Last name is required.';
+    if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) $errors[] = 'Enter a valid email address.';
+    if (strlen($password) < 6)      $errors[] = 'Password must be at least 6 characters.';
+    if ($password !== $confirm)     $errors[] = 'Passwords do not match.';
 
-        if (mysqli_stmt_num_rows($check) > 0) {
-            $error = 'That email is already registered.';
-        } else {
-            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
-            $stmt = mysqli_prepare(
-                $conn,
-                'INSERT INTO users (first_name, last_name, email, password)
-                 VALUES (?, ?, ?, ?)'
-            );
-
-            mysqli_stmt_bind_param(
-                $stmt,
-                'ssss',
-                $firstName,
-                $lastName,
-                $email,
-                $hashedPassword
-            );
-
-            if (mysqli_stmt_execute($stmt)) {
-                header('Location: login.php?registered=1');
-                exit;
-            } else {
-                $error = 'Registration failed. Please try again.';
-            }
-
-            mysqli_stmt_close($stmt);
+    if (!$errors) {
+        $check = $pdo->prepare('SELECT user_id FROM users WHERE email = ?');
+        $check->execute([$data['email']]);
+        if ($check->fetch()) {
+            $errors[] = 'That email is already registered.';
         }
+    }
 
-        mysqli_stmt_close($check);
+    if (!$errors) {
+        $stmt = $pdo->prepare(
+            'INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)'
+        );
+        $stmt->execute([
+            $data['first_name'],
+            $data['last_name'],
+            $data['email'],
+            password_hash($password, PASSWORD_DEFAULT),
+        ]);
+        $newId = (int) $pdo->lastInsertId();
+        log_activity($pdo, 'REGISTER', 'users', $newId, $newId);
+
+        flash('success', 'Account created. You can now log in.');
+        redirect('users/login.php');
     }
 }
+
+page_header('Register', false);
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Create Account | Coffee Shop</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-<header class="site-header">
-    <nav class="navbar">
-        <a class="brand" href="index.php">coffee<span>shop.</span></a>
-        <div class="nav-links">
-            <a href="index.php">Home</a>
-            <a href="login.php">Log in</a>
+<div class="auth-card">
+    <div class="auth-brand">The Kape Project</div>
+
+    <h1>Create account</h1>
+    <p class="muted">Register to manage The Kape Project.</p>
+
+    <?php foreach ($errors as $error): ?>
+        <div class="alert alert-error"><?= e($error) ?></div>
+    <?php endforeach; ?>
+
+    <form method="post" novalidate>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="first_name">First name</label>
+                <input type="text" id="first_name" name="first_name" value="<?= e($data['first_name']) ?>" required>
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last name</label>
+                <input type="text" id="last_name" name="last_name" value="<?= e($data['last_name']) ?>" required>
+            </div>
         </div>
-    </nav>
-</header>
-
-<main class="container page-content">
-    <p class="eyebrow">Join the team</p>
-    <h1>Create an account</h1>
-    <p>Register to access the Coffee Shop management system.</p>
-
-    <?php if ($error !== ''): ?>
-        <p class="error"><?= htmlspecialchars($error) ?></p>
-    <?php endif; ?>
-
-    <form method="POST" action="register.php">
         <div class="form-group">
-            <label for="first_name">First name</label>
-            <input id="first_name" name="first_name" type="text"
-                   maxlength="100" required
-                   value="<?= htmlspecialchars($_POST['first_name'] ?? '') ?>">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="<?= e($data['email']) ?>" required>
         </div>
-
         <div class="form-group">
-            <label for="last_name">Last name</label>
-            <input id="last_name" name="last_name" type="text"
-                   maxlength="100" required
-                   value="<?= htmlspecialchars($_POST['last_name'] ?? '') ?>">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
         </div>
-
-        <div class="form-group">
-            <label for="email">Email address</label>
-            <input id="email" name="email" type="email"
-                   maxlength="150" required
-                   value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
-        </div>
-
-        <div class="form-group">
-            <label for="password">Password (at least 8 characters)</label>
-            <input id="password" name="password" type="password"
-                   minlength="8" required>
-        </div>
-
         <div class="form-group">
             <label for="confirm_password">Confirm password</label>
-            <input id="confirm_password" name="confirm_password"
-                   type="password" minlength="8" required>
+            <input type="password" id="confirm_password" name="confirm_password" required>
         </div>
-
-        <div class="form-actions">
-            <button type="submit">Create account</button>
-            <a class="btn btn-outline" href="login.php">I have an account</a>
-        </div>
+        <button type="submit" class="btn btn-primary btn-block">Register</button>
     </form>
-</main>
 
-<footer class="site-footer">
-    <div class="footer-inner">
-        <p>coffee shop. — Customer &amp; order management</p>
-    </div>
-</footer>
-</body>
-</html>
+    <p class="auth-switch">Already have an account? <a href="login.php">Log in</a></p>
+</div>
+<?php page_footer(); ?>
