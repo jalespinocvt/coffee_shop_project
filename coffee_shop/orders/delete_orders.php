@@ -1,55 +1,25 @@
 <?php
+require_once __DIR__ . '/../auth.php';
+require_login();
 
-include("../config/database.php");
-
-$message = "";
-
-if(isset($_POST['delete']))
-{
-    $id = $_POST['order_id'];
-
-    $sql = "DELETE FROM orders
-            WHERE order_id='$id'";
-
-    if(mysqli_query($conn, $sql))
-    {
-        $message = "Order Deleted Successfully!";
-    }
-    else
-    {
-        $message = "Error Deleting Order!";
-    }
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    redirect('orders/view_orders.php');
 }
 
-?>
+$id = (int) ($_POST['id'] ?? 0);
 
-<!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" href="../style.css">
-    <title>Delete Order</title>
-</head>
-<body>
+try {
+    $stmt = $pdo->prepare('DELETE FROM orders WHERE order_id = ?');
+    $stmt->execute([$id]);
 
-<h2>Delete Order</h2>
+    if ($stmt->rowCount() > 0) {
+        log_activity($pdo, 'DELETE', 'orders', $id);
+        flash('success', 'Order deleted.');
+    } else {
+        flash('error', 'Order not found.');
+    }
+} catch (PDOException $e) {
+    flash('error', 'Unable to delete this order.');
+}
 
-<form method="POST">
-
-    Order ID:
-    <br>
-    <input type="number" name="order_id" required>
-
-    <br><br>
-
-    <button type="submit" name="delete">
-        Delete Order
-    </button>
-
-</form>
-
-<br>
-
-<?php echo $message; ?>
-
-</body>
-</html>
+redirect('orders/view_orders.php');
