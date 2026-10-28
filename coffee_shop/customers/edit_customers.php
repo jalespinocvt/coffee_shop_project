@@ -1,70 +1,76 @@
 <?php
 require_once __DIR__ . '/../auth.php';
-require_once __DIR__ . '/../config/database.php';
+require_login();
 
-include("../config/database.php");
+$id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
 
-if(isset($_POST['update']))
-{
-    $id = $_POST['customer_id'];
-    $name = $_POST['customer_name'];
-    $contact = $_POST['contact_number'];
+$stmt = $pdo->prepare('SELECT * FROM customers WHERE customer_id = ?');
+$stmt->execute([$id]);
+$customer = $stmt->fetch();
 
-    mysqli_query(
-        $conn,
-        "UPDATE customers
-         SET customer_name='$name',
-             contact_number='$contact'
-         WHERE customer_id=$id"
-    );
-
-    echo "Customer Updated Successfully!";
+if (!$customer) {
+    flash('error', 'Customer not found.');
+    redirect('customers/view_customers.php');
 }
 
+$errors = [];
+$name = $customer['customer_name'];
+$contact = $customer['contact_number'] ?? '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name    = trim($_POST['customer_name'] ?? '');
+    $contact = trim($_POST['contact_number'] ?? '');
+
+    if ($name === '') $errors[] = 'Customer name is required.';
+    if (strlen($name) > 100) $errors[] = 'Customer name is too long.';
+    if ($contact !== '' && !preg_match('/^[0-9+\-\s()]{7,20}$/', $contact)) {
+        $errors[] = 'Enter a valid contact number.';
+    }
+
+    if (!$errors) {
+        $update = $pdo->prepare(
+            'UPDATE customers
+             SET customer_name = ?, contact_number = ?, last_updated_by = ?
+             WHERE customer_id = ?'
+        );
+        $update->execute([
+            $name,
+            $contact !== '' ? $contact : null,
+            $_SESSION['user_id'],
+            $id,
+        ]);
+        log_activity($pdo, 'UPDATE', 'customers', $id);
+
+        flash('success', 'Customer updated successfully.');
+        redirect('customers/view_customers.php');
+    }
+}
+
+page_header('Edit customer', true, 'customers');
 ?>
+<div class="page-head">
+    <h1>Edit customer #<?= $id ?></h1>
+</div>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" href="../style.css">
-    <title>Update Customer</title>
-</head>
-<body>
+<section class="panel form-panel">
+    <?php foreach ($errors as $error): ?>
+        <div class="alert alert-error"><?= e($error) ?></div>
+    <?php endforeach; ?>
 
-<h2>Update Customer</h2>
-
-<form method="POST">
-
-    Customer ID:
-    <br>
-    <input type="number"
-           name="customer_id"
-           required>
-
-    <br><br>
-
-    New Name:
-    <br>
-    <input type="text"
-           name="customer_name"
-           required>
-
-    <br><br>
-
-    New Contact:
-    <br>
-    <input type="text"
-           name="contact_number"
-           required>
-
-    <br><br>
-
-    <button type="submit"
-            name="update">
-        Update
-    </button>
-
-</form>
-
-</body>
-</html>
+    <form method="post">
+        <input type="hidden" name="id" value="<?= $id ?>">
+        <div class="form-group">
+            <label for="customer_name">Customer name</label>
+            <input type="text" id="customer_name" name="customer_name" value="<?= e($name) ?>" required>
+        </div>
+        <div class="form-group">
+            <label for="contact_number">Contact number <span class="optional">(optional)</span></label>
+            <input type="text" id="contact_number" name="contact_number" value="<?= e($contact) ?>">
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Update customer</button>
+            <a href="view_customers.php" class="btn btn-ghost">Cancel</a>
+        </div>
+    </form>
+</section>
+<?php page_footer(); ?>
