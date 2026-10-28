@@ -1,133 +1,64 @@
-
 <?php
-session_start();
+require_once __DIR__ . '/auth.php';
+require_login();
 
-$isLoggedIn = isset($_SESSION['user_id']);
+$totalCustomers = $pdo->query('SELECT COUNT(*) FROM customers')->fetchColumn();
+$totalOrders    = $pdo->query('SELECT COUNT(*) FROM orders')->fetchColumn();
+
+$recent = $pdo->query(
+    "SELECT l.action, l.table_name, l.record_id, l.action_time,
+            CONCAT(u.first_name, ' ', u.last_name) AS user_name
+     FROM activity_logs l
+     LEFT JOIN users u ON u.user_id = l.user_id
+     ORDER BY l.action_time DESC, l.log_id DESC
+     LIMIT 8"
+)->fetchAll();
+
+page_header('Dashboard', true, 'dashboard');
 ?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coffee Shop | Home</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<header class="site-header">
-    <nav class="navbar">
-        <a class="brand" href="index.php">
-            coffee<span>shop.</span>
-        </a>
-
-        <div class="nav-links">
-            <a href="index.php">Home</a>
-            <a href="customers/view_customers.php">Customers</a>
-            <a href="orders/view_orders.php">Orders</a>
-
-            <?php if ($isLoggedIn): ?>
-                <a href="logout.php">Log out</a>
-            <?php else: ?>
-                <a href="login.php">Log in</a>
-                <a href="register.php">Register</a>
-            <?php endif; ?>
-        </div>
-    </nav>
-</header>
-
-<main>
-    <section class="hero">
-        <div class="container">
-            <p class="eyebrow">Your coffee shop management system</p>
-
-            <div class="hero-copy">
-                <h1>A little more order<br>behind every cup.</h1>
-
-                <p>
-                    Keep customer information and orders organized
-                    in one place, so you can spend less time sorting
-                    through records and more time running the shop.
-                </p>
-
-                <div class="hero-actions">
-                    <a class="btn" href="customers/view_customers.php">
-                        View customers
-                    </a>
-
-                    <a class="btn btn-outline" href="orders/view_orders.php">
-                        View orders
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="section">
-        <div class="container">
-            <div class="section-heading">
-                <p class="eyebrow">The essentials</p>
-                <h2>Everything in its place.</h2>
-                <p>Simple tools for the everyday work of a coffee shop.</p>
-            </div>
-
-            <div class="service-grid">
-                <article class="service-item">
-                    <span class="service-number">01 / Customers</span>
-                    <h3>Know your customers</h3>
-                    <p>
-                        Keep customer names and contact details
-                        organized and easy to find.
-                    </p>
-                    <a href="customers/view_customers.php">
-                        Browse customers →
-                    </a>
-                </article>
-
-                <article class="service-item">
-                    <span class="service-number">02 / Orders</span>
-                    <h3>Keep orders together</h3>
-                    <p>
-                        Review order dates, products, and the
-                        customers connected to each order.
-                    </p>
-                    <a href="orders/view_orders.php">
-                        Browse orders →
-                    </a>
-                </article>
-
-                <article class="service-item">
-                    <span class="service-number">03 / Account</span>
-                    <h3>Your workspace</h3>
-                    <p>
-                        <?php if ($isLoggedIn): ?>
-                            You are signed in. Continue managing
-                            your shop's records.
-                        <?php else: ?>
-                            Sign in to your account to access
-                            your personalized workspace.
-                        <?php endif; ?>
-                    </p>
-
-                    <?php if ($isLoggedIn): ?>
-                        <a href="customers/add_customers.php">
-                            Add a customer →
-                        </a>
-                    <?php else: ?>
-                        <a href="login.php">Sign in to continue →</a>
-                    <?php endif; ?>
-                </article>
-            </div>
-        </div>
-    </section>
-</main>
-
-<footer class="site-footer">
-    <div class="footer-inner">
-        <p>coffee shop. &mdash; Made for the daily routine.</p>
-        <p>Customer &amp; order management</p>
+<div class="page-head">
+    <div>
+        <h1>Welcome back, <?= e($_SESSION['first_name']) ?></h1>
+        <p class="muted">Here is what is happening at The Kape Project.</p>
     </div>
-</footer>
+</div>
 
-</body>
-</html>
+<div class="card-grid">
+    <a class="stat-card" href="<?= BASE_URL ?>/customers/view_customers.php">
+        <span class="stat-label">Customers</span>
+        <span class="stat-number"><?= (int) $totalCustomers ?></span>
+        <span class="stat-link">Manage customers →</span>
+    </a>
+    <a class="stat-card" href="<?= BASE_URL ?>/orders/view_orders.php">
+        <span class="stat-label">Orders</span>
+        <span class="stat-number"><?= (int) $totalOrders ?></span>
+        <span class="stat-link">Manage orders →</span>
+    </a>
+</div>
+
+<section class="panel">
+    <h2>Recent activity</h2>
+    <?php if (!$recent): ?>
+        <p class="muted">No activity yet.</p>
+    <?php else: ?>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>User</th><th>Action</th><th>Table</th><th>Record</th><th>When</th></tr>
+            </thead>
+            <tbody>
+            <?php foreach ($recent as $row): ?>
+                <tr>
+                    <td><?= e($row['user_name'] ?? 'Unknown') ?></td>
+                    <td><span class="badge badge-<?= strtolower(e($row['action'])) ?>"><?= e($row['action']) ?></span></td>
+                    <td><?= e($row['table_name']) ?></td>
+                    <td>#<?= (int) $row['record_id'] ?></td>
+                    <td><?= e(format_time($row['action_time'])) ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+</section>
+<?php page_footer(); ?>
