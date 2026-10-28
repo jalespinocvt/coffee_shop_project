@@ -1,56 +1,26 @@
 <?php
 require_once __DIR__ . '/../auth.php';
-require_once __DIR__ . '/../config/database.php';
+require_login();
 
-include("../config/database.php");
-
-$message = "";
-
-if(isset($_POST['delete']))
-{
-    $id = $_POST['customer_id'];
-
-    $sql = "DELETE FROM customers WHERE customer_id='$id'";
-
-    if(mysqli_query($conn, $sql))
-    {
-        $message = "Customer Deleted Successfully!";
-    }
-    else
-    {
-        $message = "Error deleting customer.";
-    }
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    redirect('customers/view_customers.php');
 }
 
-?>
+$id = (int) ($_POST['id'] ?? 0);
 
-<!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" href="../style.css">
-    <title>Delete Customer</title>
-</head>
-<body>
+try {
+    $stmt = $pdo->prepare('DELETE FROM customers WHERE customer_id = ?');
+    $stmt->execute([$id]);
 
-<h2>Delete Customer</h2>
+    if ($stmt->rowCount() > 0) {
+        log_activity($pdo, 'DELETE', 'customers', $id);
+        flash('success', 'Customer deleted.');
+    } else {
+        flash('error', 'Customer not found.');
+    }
+} catch (PDOException $e) {
+    // Foreign key: the customer still has orders
+    flash('error', 'This customer still has orders. Delete those orders first.');
+}
 
-<form method="POST">
-
-    <label>Customer ID:</label>
-    <br>
-    <input type="number" name="customer_id" required>
-
-    <br><br>
-
-    <button type="submit" name="delete">
-        Delete Customer
-    </button>
-
-</form>
-
-<br>
-
-<?php echo $message; ?>
-
-</body>
-</html>
+redirect('customers/view_customers.php');
