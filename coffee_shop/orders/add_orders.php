@@ -21,9 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($customerId <= 0) $errors[] = 'Select a customer.';
 
     if (!$errors) {
+        // CHANGED: added date_added and last_updated (both saved as NOW())
         $stmt = $pdo->prepare(
-            'INSERT INTO orders (order_date, product_name, customer_id, added_by, last_updated_by)
-             VALUES (?, ?, ?, ?, ?)'
+            'INSERT INTO orders (order_date, product_name, customer_id, added_by, last_updated_by, date_added, last_updated)
+             VALUES (?, ?, ?, ?, ?, NOW(), NOW())'
         );
         $stmt->execute([$orderDate, $product, $customerId, $_SESSION['user_id'], $_SESSION['user_id']]);
         log_activity($pdo, 'INSERT', 'orders', (int) $pdo->lastInsertId());
