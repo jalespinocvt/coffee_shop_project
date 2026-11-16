@@ -17,9 +17,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
+        // CHANGED: added date_added and last_updated (both saved as NOW())
         $stmt = $pdo->prepare(
-            'INSERT INTO customers (customer_name, contact_number, added_by, last_updated_by)
-             VALUES (?, ?, ?, ?)'
+            'INSERT INTO customers (customer_name, contact_number, added_by, last_updated_by, date_added, last_updated)
+             VALUES (?, ?, ?, ?, NOW(), NOW())'
         );
         $stmt->execute([
             $name,
