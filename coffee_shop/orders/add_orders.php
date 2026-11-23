@@ -20,13 +20,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (strlen($product) > 100) $errors[] = 'Product name is too long.';
     if ($customerId <= 0) $errors[] = 'Select a customer.';
 
+    // CHANGED: handle the image upload (required when adding)
+    $imagePath = null;
     if (!$errors) {
-        // CHANGED: added date_added and last_updated (both saved as NOW())
+        [$imagePath, $imgError] = upload_image($_FILES['image'] ?? ['error' => UPLOAD_ERR_NO_FILE]);
+        if ($imgError) {
+            $errors[] = $imgError;
+        } elseif ($imagePath === null) {
+            $errors[] = 'Please attach an image for this order.';
+        }
+    }
+
+    if (!$errors) {
         $stmt = $pdo->prepare(
-            'INSERT INTO orders (order_date, product_name, customer_id, added_by, last_updated_by, date_added, last_updated)
-             VALUES (?, ?, ?, ?, ?, NOW(), NOW())'
+            'INSERT INTO orders (order_date, product_name, image_path, customer_id, added_by, last_updated_by)
+             VALUES (?, ?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$orderDate, $product, $customerId, $_SESSION['user_id'], $_SESSION['user_id']]);
+        $stmt->execute([$orderDate, $product, $imagePath, $customerId, $_SESSION['user_id'], $_SESSION['user_id']]);
         log_activity($pdo, 'INSERT', 'orders', (int) $pdo->lastInsertId());
 
         flash('success', 'Order added successfully.');
@@ -49,7 +59,8 @@ page_header('Add order', true, 'orders');
         <p class="muted">You need at least one customer before adding an order.
             <a href="<?= BASE_URL ?>/customers/add_customers.php">Add a customer</a></p>
     <?php else: ?>
-    <form method="post">
+    <!-- CHANGED: enctype is required for file uploads -->
+    <form method="post" enctype="multipart/form-data">
         <div class="form-group">
             <label for="order_date">Order date</label>
             <input type="date" id="order_date" name="order_date" value="<?= e($orderDate) ?>" required>
@@ -70,6 +81,11 @@ page_header('Add order', true, 'orders');
                     </option>
                 <?php endforeach; ?>
             </select>
+        </div>
+        <!-- CHANGED: image field -->
+        <div class="form-group">
+            <label for="image">Order image <span class="optional">(JPG, PNG, GIF or WEBP, max 2 MB)</span></label>
+            <input type="file" id="image" name="image" accept="image/*" required>
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save order</button>
