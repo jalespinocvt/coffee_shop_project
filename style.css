@@ -218,4 +218,16 @@ input:focus, select:focus {
     .form-row { grid-template-columns: 1fr; }
     .page-head { flex-direction: column; align-items: flex-start; }
     .auth-card { padding: 28px 22px; }
+}/* ---------- Image thumbnails ---------- */
+.thumb {
+    width: 48px; height: 48px; object-fit: cover;
+    border-radius: 8px; border: 1px solid var(--border); display: block;
+}
+.thumb-preview {
+    max-width: 180px; max-height: 180px; object-fit: cover;
+    border-radius: 10px; border: 1px solid var(--border); display: block;
+}
+input[type="file"] {
+    width: 100%; padding: 9px 11px; font: inherit; color: var(--text);
+    background: #fdfcfb; border: 1px dashed var(--border); border-radius: 9px;
 }
