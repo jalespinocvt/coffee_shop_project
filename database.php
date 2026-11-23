@@ -1,14 +1,15 @@
 <?php
+$host = 'localhost';
+$db   = 'coffee_shop';
+$user = 'root';
+$pass = '';
 
-$conn = mysqli_connect(
-    "localhost",
-    "root",
-    "",
-    "coffee_shop"
-);
-
-if(!$conn){
-    die("Connection Failed: " . mysqli_connect_error());
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => false,
+    ]);
+} catch (PDOException $e) {
+    die('Database connection failed: ' . $e->getMessage());
 }
-
-?>
